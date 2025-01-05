@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "thishanth/filter-plugin",
+  "version": "0.1.0",
+  "title": "Product Filter Plugin",
+  "category": "widgets",
+  "icon": "filter",
+  "attributes": {
+    "viewDetailsText": {
+      "type": "string",
+      "default": "View Details"
+    },
+    "selectedCategories": {
+      "type": "array",
+      "default": []
+    },
+    "products": {
+      "type": "array",
+      "default": []
+    },
+    "cardsPerRow": {
+      "type": "number",
+      "default": 3
+    },
+    "cardWidth": {
+      "type": "string",
+      "default": "auto"
+    },
+    "cardHeight": {
+      "type": "string",
+      "default": "300px"
+    },
+    "imageHeight": {
+      "type": "string",
+      "default": "200px"
+    },
+    "cardShape": {
+      "type": "string",
+      "default": "rectangle"
+    },
+    "cardBgColor": {
+      "type": "string",
+      "default": "#ffffff"
+    },
+    "textColor": {
+      "type": "string",
+      "default": "#000000"
+    },
+    "fontSize": {
+      "type": "string",
+      "default": "16px"
+    },
+    "buttonColor": {
+      "type": "string",
+      "default": "#0073aa"
+    },
+    "buttonHoverColor": {
+      "type": "string",
+      "default": "#005177"
+    },
+    "cardMargin": {
+      "type": "string",
+      "default": "20px"
+    },
+    "cardPadding": {
+      "type": "string",
+      "default": "20px"
+    },
+    "borderWidth": {
+      "type": "string",
+      "default": "1px"
+    },
+    "borderRadius": {
+      "type": "string",
+      "default": "8px"
+    },
+    "cardOuterMargin": {
+      "type": "string",
+      "default": "20px"
+    }
+  },
+  "description": "A customizable product filter block that allows you to filter products by category and customize card appearance and layout.",
+  "example": {},
+  "supports": {
+    "interactivity": true
+  },
+  "textdomain": "filter-plugin",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "viewScriptModule": "file:./view.js"
+}

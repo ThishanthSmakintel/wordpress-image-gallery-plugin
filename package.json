@@ -1,0 +1,26 @@
+{
+	"name": "imageallery",
+	"version": "0.1.0",
+	"description": "A WordPress plugin for filtering products.",
+	"author": "Thishanth",
+	"license": "GPL-2.0-or-later",
+	"main": "build/index.js",
+	"scripts": {
+		"build": "wp-scripts build --experimental-modules",
+		"format": "wp-scripts format",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip",
+		"start": "wp-scripts start --experimental-modules"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^27.9.0"
+	},
+	"dependencies": {
+		"axios": "^1.7.9",
+		"react-loading-skeleton": "^3.5.0",
+		"sass": "^1.83.0",
+		"sass-loader": "^16.0.4"
+	}
+}

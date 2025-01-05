@@ -1,0 +1,62 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "thishanth/gallery-plugin",
+	"version": "0.1.0",
+	"title": "Gallery Plugin",
+	"category": "widgets",
+	"icon": "images-alt",
+	"attributes": {
+		"selectedCategories": {
+			"type": "array",
+			"default": []
+		},
+		"images": {
+			"type": "array",
+			"default": []
+		},
+		"imagesPerRow": {
+			"type": "number",
+			"default": 3
+		},
+		"imageHeight": {
+			"type": "string",
+			"default": "200px"
+		},
+		"cardWidth": {
+			"type": "string",
+			"default": "auto"
+		},
+		"cardShape": {
+			"type": "string",
+			"default": "rectangle"
+		},
+		"cardBgColor": {
+			"type": "string",
+			"default": "#ffffff"
+		},
+		"borderWidth": {
+			"type": "string",
+			"default": "1px"
+		},
+		"borderRadius": {
+			"type": "string",
+			"default": "8px"
+		},
+		"cardMargin": {
+			"type": "string",
+			"default": "20px"
+		}
+	},
+	"description": "A customizable image gallery block with category filtering and layout options.",
+	"example": {},
+	"supports": {
+		"interactivity": true
+	},
+	"textdomain": "gallery-plugin",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
+}
