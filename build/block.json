@@ -7,13 +7,9 @@
   "category": "widgets",
   "icon": "images-alt",
   "attributes": {
-    "selectedCategories": {
-      "type": "array",
-      "default": []
-    },
-    "images": {
-      "type": "array",
-      "default": []
+    "selectedCategory": {
+      "type": "string",
+      "default": ""
     },
     "imagesPerRow": {
       "type": "number",
