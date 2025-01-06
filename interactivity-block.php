@@ -183,9 +183,15 @@ class ImageGallery_Block
 
 	public function settings_page()
 	{
+		// Check if a new category is being submitted
+		if (isset($_POST['create_category'])) {
+			$this->handle_create_category();
+		}
+
 ?>
 		<div class="wrap">
 			<h1>Image Gallery Settings</h1>
+
 			<!-- Upload and Category Select Form -->
 			<form id="upload_images_form" method="post" enctype="multipart/form-data">
 				<?php wp_nonce_field('imagegallery_ajax_nonce', 'nonce'); ?>
@@ -212,27 +218,33 @@ class ImageGallery_Block
 			</form>
 
 			<h2>Images by Category</h2>
-
-			<!-- Image Display Area -->
 			<h3>All Images (Default Display)</h3>
 
 			<!-- Category Filter Form -->
-
 			<select name="gallery_category_filter" id='gallery_category_filter'>
 				<option value="">All Categories</option>
 				<?php
-				// Fetch all gallery categories
 				$categories = get_terms(array(
 					'taxonomy' => 'gallery_category',
-					'hide_empty' => false, // Show categories even if there are no posts assigned
+					'hide_empty' => false,
 				));
-
-				// Display category options in the dropdown
 				foreach ($categories as $category) {
 					echo '<option value="' . esc_attr($category->slug) . '">' . esc_html($category->name) . '</option>';
 				}
 				?>
 			</select>
+
+			<!-- Form for adding a new category -->
+			<h2>Create New Category</h2>
+			<form method="post">
+				<?php wp_nonce_field('imagegallery_ajax_nonce', 'nonce'); ?>
+				<label for="new_category_name">Category Name:</label><br>
+				<input type="text" name="new_category_name" id="new_category_name" required><br><br>
+				<input type="submit" name="create_category" value="Create Category" class="button button-secondary">
+			</form>
+
+
+			<!-- Display the image table -->
 			<table class="wp-list-table widefat fixed striped" id="wp-list-table">
 				<thead>
 					<tr>
@@ -242,31 +254,24 @@ class ImageGallery_Block
 				</thead>
 				<tbody>
 					<?php
-					// Base query args for fetching all images without any filter
-
+					// Custom SQL query to fetch images
 					global $wpdb;
 
-					// Custom SQL query to get images and their categories
 					$sql = "
-    SELECT p.ID AS image_id, p.post_title, GROUP_CONCAT(t.name ORDER BY t.name ASC) AS category_names 
-    FROM {$wpdb->posts} p
-    INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-    INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-    INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-    WHERE p.post_type = 'attachment' AND tt.taxonomy = 'gallery_category'
-    GROUP BY p.ID
-    ORDER BY p.ID;
-";
-
-					// Run the query and get the results
+					SELECT p.ID AS image_id, p.post_title, GROUP_CONCAT(t.name ORDER BY t.name ASC) AS category_names 
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+					INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+					INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
+					WHERE p.post_type = 'attachment' AND tt.taxonomy = 'gallery_category'
+					GROUP BY p.ID
+					ORDER BY p.ID;
+				";
 					$results = $wpdb->get_results($sql);
-
-					// Check if any images are returned
 					if ($results) {
 						foreach ($results as $row) {
 							$image_url = wp_get_attachment_url($row->image_id);
 							$category_names = $row->category_names ? $row->category_names : 'No categories assigned';
-
 							echo '<tr>';
 							echo '<td><img src="' . esc_url($image_url) . '" style="max-width: 150px;"></td>';
 							echo '<td>' . esc_html($category_names) . '</td>';
@@ -276,12 +281,41 @@ class ImageGallery_Block
 						echo '<tr><td colspan="2">No images found.</td></tr>';
 					}
 					?>
-
 				</tbody>
 			</table>
 		</div>
 <?php
 	}
+
+
+	public function handle_create_category()
+	{
+		// Verify nonce for security
+		if (! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'imagegallery_ajax_nonce')) {
+			wp_die('Permission Denied: Invalid nonce.');
+		}
+
+		// Get the category name from the form
+		$new_category_name = isset($_POST['new_category_name']) ? sanitize_text_field($_POST['new_category_name']) : '';
+
+		// Check if the category name is not empty
+		if (empty($new_category_name)) {
+			echo '<div class="notice notice-error"><p>' . esc_html__('Category name cannot be empty.', 'imagegallery-block') . '</p></div>';
+			return;
+		}
+
+		// Create a new category using wp_insert_term
+		$term = wp_insert_term($new_category_name, 'gallery_category');
+
+		if (is_wp_error($term)) {
+			echo '<div class="notice notice-error"><p>' . esc_html__('Error creating category: ', 'imagegallery-block') . $term->get_error_message() . '</p></div>';
+			return;
+		}
+
+		// Successfully created the category
+		echo '<div class="notice notice-success"><p>' . esc_html__('Category created successfully!', 'imagegallery-block') . '</p></div>';
+	}
+
 
 	public function filter_images_by_category()
 	{

@@ -10,7 +10,7 @@
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ Edit)
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "react");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -31,506 +31,66 @@ __webpack_require__.r(__webpack_exports__);
 
  // Import skeleton styles
 
-// WooCommerce API credentials
-const API_BASE_URL = 'https://wordpress.thishanth.online/wp-json/wc/v3/';
-const CONSUMER_KEY = 'ck_fc9abd279655dd7faf7086a67c29839c126d4654';
-const CONSUMER_SECRET = 'cs_e5ab70e65fa92e51fe22bdd88882aa675d7ad290';
-function Edit(props) {
-  const {
-    attributes,
-    setAttributes
-  } = props;
-  const {
-    viewDetailsText = "View Details",
-    selectedCategories = [],
-    cardsPerRow = 3,
-    cardHeight = '100%',
-    imageHeight = '200px',
-    cardBgColor = '#ffffff',
-    textColor = '#000000',
-    fontSize = '16px',
-    buttonColor = '#0073aa',
-    buttonHoverColor = '#005177',
-    cardMargin = '20px',
-    cardPadding = '20px',
-    borderWidth = '1px',
-    borderRadius = '8px',
-    cardWidth = '100%',
-    // Added to control the width of the card
-    cardStyle = 'rectangular' // Added option to select card style (square or rectangular)
-  } = attributes;
-  const resetAllSettings = () => {
-    setAttributes({
-      viewDetailsText: "View Details",
-      selectedCategories: [],
-      cardsPerRow: 3,
-      cardHeight: '100%',
-      imageHeight: '200px',
-      cardBgColor: '#ffffff',
-      textColor: '#000000',
-      fontSize: '16px',
-      buttonColor: '#0073aa',
-      buttonHoverColor: '#005177',
-      cardMargin: '20px',
-      cardPadding: '20px',
-      borderWidth: '1px',
-      borderRadius: '8px',
-      cardWidth: '100%',
-      cardStyle: 'rectangular'
-    });
-  };
+// Custom Image Gallery API URL
+const API_BASE_URL = '/wp-json/imagegallery/v1/images';
+
+// State and Loading States
+const MyImageGalleryBlock = () => {
+  const [images, setImages] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
+  const [loading, setLoading] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
+  const [category, setCategory] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)('');
+  const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
+
+  // Fetch images on mount
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
+    const fetchImages = async () => {
+      try {
+        setLoading(true);
+        // Construct the API URL with selected category
+        const response = await axios__WEBPACK_IMPORTED_MODULE_5__["default"].get(`${API_BASE_URL}?category=${category}`);
+        setImages(response.data); // Assuming response is the image data
+      } catch (err) {
+        setError('Error fetching images');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchImages();
+  }, [category]); // Re-run when category changes
+
+  // Block Props
   const blockProps = (0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)();
-  const [showCategoryFilter, setShowCategoryFilter] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
-  const [productCategories, setProductCategories] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-  const [products, setProducts] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
-  const [loading, setLoading] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(true); // Track loading state
-  const [imageLoading, setImageLoading] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(false); // Track image loading state
-
-  // Fetch products from WooCommerce
-  const fetchProducts = async () => {
-    try {
-      const response = await axios__WEBPACK_IMPORTED_MODULE_5__["default"].get(`${API_BASE_URL}products`, {
-        params: {
-          consumer_key: CONSUMER_KEY,
-          consumer_secret: CONSUMER_SECRET
-        }
-      });
-      const mappedProducts = response.data.map(product => ({
-        id: product.id,
-        name: product.name,
-        category: product.categories.map(category => category.name).join(', '),
-        imageUrl: product.images.length > 0 ? product.images[0].src : '',
-        permalink: product.permalink,
-        rating: product.average_rating // Fetch product rating
-      }));
-      setProducts(mappedProducts);
-      setAttributes({
-        products: mappedProducts
-      });
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false); // Set loading to false when data is fetched
-    }
-  };
-
-  // Fetch categories from WooCommerce
-  const fetchCategories = async () => {
-    try {
-      const response = await axios__WEBPACK_IMPORTED_MODULE_5__["default"].get(`${API_BASE_URL}products/categories`, {
-        params: {
-          consumer_key: CONSUMER_KEY,
-          consumer_secret: CONSUMER_SECRET
-        }
-      });
-      const uniqueCategories = response.data.map(category => category.name);
-      setProductCategories(uniqueCategories);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  // Fetch data on component mount
-  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-  const handleCategoryVisibilityChange = category => {
-    setAttributes({
-      selectedCategories: selectedCategories.includes(category) ? selectedCategories.filter(c => c !== category) : [...selectedCategories, category]
-    });
-  };
-  const resetCategoriesVisibility = () => {
-    setAttributes({
-      selectedCategories: productCategories
-    });
-  };
-  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-    setAttributes({
-      viewDetailsText
-    });
-  }, [viewDetailsText]);
-  const handleImageLoad = () => {
-    setImageLoading(false);
-  };
-  const renderRating = rating => {
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 !== 0;
-    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-    return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-      className: "product-rating",
-      style: {
-        display: 'flex',
-        alignItems: 'center'
-      }
-    }, [...Array(fullStars)].map((_, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("span", {
-      key: `full-${index}`,
-      style: {
-        color: '#FFD700'
-      }
-    }, "\u2605")), halfStar && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("span", {
-      style: {
-        color: '#FFD700'
-      }
-    }, "\u2605"), [...Array(emptyStars)].map((_, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("span", {
-      key: `empty-${index}`,
-      style: {
-        color: '#ddd'
-      }
-    }, "\u2605")));
-  };
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     ...blockProps
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.InspectorControls, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
-    title: "Filter Settings"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.CheckboxControl, {
-    label: "Show Category Filter",
-    checked: showCategoryFilter,
-    onChange: () => setShowCategoryFilter(!showCategoryFilter)
-  }), showCategoryFilter && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "category-filter",
-    style: {
-      marginBottom: '20px'
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", {
-    style: {
-      fontSize: '18px',
-      fontWeight: '600',
-      marginBottom: '10px'
-    }
-  }, "Categories"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "category-filter-checkboxes",
-    style: {
-      display: 'block'
-    }
-  }, productCategories.map(category => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    key: category,
-    className: "filter-checkbox-item",
-    style: {
-      marginBottom: '10px',
-      display: 'block'
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("input", {
-    type: "checkbox",
-    checked: selectedCategories.includes(category),
-    onChange: () => handleCategoryVisibilityChange(category),
-    style: {
-      marginRight: '10px',
-      cursor: 'pointer'
-    }
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("label", {
-    style: {
-      fontSize: '16px',
-      cursor: 'pointer'
-    }
-  }, category)))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
-    onClick: resetCategoriesVisibility,
-    style: {
-      backgroundColor: '#f1f1f1',
-      border: '1px solid #ccc',
-      padding: '5px 10px',
-      fontSize: '14px',
-      cursor: 'pointer'
-    }
-  }, "Reset Categories"))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
-    title: "Button Text Settings"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.TextControl, {
-    label: "View Details Button Text",
-    value: viewDetailsText,
-    onChange: text => setAttributes({
-      viewDetailsText: text
-    })
-  })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
-    title: "Layout Settings"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Cards per Row",
-    value: cardsPerRow,
-    onChange: value => setAttributes({
-      cardsPerRow: value
-    }),
-    min: 1,
-    max: 6
-  })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
-    title: "Reset Settings"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
-    isSecondary: true,
-    onClick: resetAllSettings,
-    style: {
-      backgroundColor: '#f1f1f1',
-      border: '1px solid #ccc',
-      padding: '5px 10px',
-      fontSize: '14px',
-      cursor: 'pointer',
-      marginTop: '10px'
-    }
-  }, "Reset All Settings")), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
-    title: "Card Styling Settings"
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Card Height (px)",
-    value: parseInt(cardHeight),
-    onChange: value => setAttributes({
-      cardHeight: `${value}px`
-    }),
-    min: 150,
-    max: 1000
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Image Height (px)",
-    value: parseInt(imageHeight),
-    onChange: value => setAttributes({
-      imageHeight: `${value}px`
-    }),
-    min: 100,
-    max: 1000
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Card Margin (px)",
-    value: parseInt(cardMargin),
-    onChange: value => setAttributes({
-      cardMargin: `${value}px`
-    }),
-    min: 0,
-    max: 50
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Card Padding (px)",
-    value: parseInt(cardPadding),
-    onChange: value => setAttributes({
-      cardPadding: `${value}px`
-    }),
-    min: 0,
-    max: 50
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ColorPicker, {
-    color: cardBgColor,
-    onChangeComplete: color => setAttributes({
-      cardBgColor: color.hex
-    }),
-    disableAlpha: true,
-    label: "Card Background Color"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ColorPicker, {
-    color: textColor,
-    onChangeComplete: color => setAttributes({
-      textColor: color.hex
-    }),
-    disableAlpha: true,
-    label: "Text Color"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.FontSizePicker, {
-    label: "Font Size",
-    value: fontSize,
-    onChange: value => setAttributes({
-      fontSize: value
-    })
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ColorPicker, {
-    color: buttonColor,
-    onChangeComplete: color => setAttributes({
-      buttonColor: color.hex
-    }),
-    disableAlpha: true,
-    label: "Button Color"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ColorPicker, {
-    color: buttonHoverColor,
-    onChangeComplete: color => setAttributes({
-      buttonHoverColor: color.hex
-    }),
-    disableAlpha: true,
-    label: "Button Hover Color"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Border Width (px)",
-    value: parseInt(borderWidth),
-    onChange: value => setAttributes({
-      borderWidth: `${value}px`
-    }),
-    min: 0,
-    max: 20
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Border Radius (px)",
-    value: parseInt(borderRadius),
-    onChange: value => setAttributes({
-      borderRadius: `${value}px`
-    }),
-    min: 0,
-    max: 50
-  })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
-    title: "Card Style Settings"
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
-    label: "Select Card Style",
-    value: cardStyle,
+    label: "Select Category",
+    value: category,
     options: [{
-      label: 'Rectangular',
-      value: 'rectangular'
+      label: 'All Categories',
+      value: ''
+    },
+    // Add your categories here dynamically if needed
+    {
+      label: 'Category 1',
+      value: 'category-1'
     }, {
-      label: 'Square',
-      value: 'square'
+      label: 'Category 2',
+      value: 'category-2'
     }],
-    onChange: value => setAttributes({
-      cardStyle: value
-    })
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Card Width (%)",
-    value: parseInt(cardWidth),
-    onChange: value => setAttributes({
-      cardWidth: `${value}px`
-    }),
-    min: 5,
-    max: 1000
-  }))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "product-filter-frontend",
-    style: {
-      padding: '20px',
-      backgroundColor: '#f9f9f9',
-      borderRadius: '8px'
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "filter-container",
-    style: {
-      marginBottom: '20px'
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
-    isSecondary: true,
-    onClick: () => setShowCategoryFilter(!showCategoryFilter),
-    style: {
-      padding: '10px 20px',
-      fontSize: '16px',
-      backgroundColor: '#0073aa',
-      color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer'
-    }
-  }, "Toggle Category Filter"), showCategoryFilter && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "category-filter-checkboxes",
-    style: {
-      display: 'flex',
-      marginTop: '10px',
-      flexWrap: 'wrap'
-    }
-  }, productCategories.map(category => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    key: category,
-    className: "filter-checkbox-item",
-    style: {
-      marginRight: '20px',
-      display: 'flex',
-      alignItems: 'center'
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("input", {
-    type: "checkbox",
-    checked: selectedCategories.includes(category),
-    onChange: () => handleCategoryVisibilityChange(category),
-    style: {
-      marginRight: '10px',
-      cursor: 'pointer'
-    }
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("label", {
-    style: {
-      fontSize: '16px',
-      cursor: 'pointer'
-    }
-  }, category))))), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "product-list",
-    style: {
-      display: 'grid',
-      gridTemplateColumns: `repeat(${cardsPerRow}, 1fr)`,
-      // Explicitly set columns based on cardsPerRow
-      gap: '20px',
-      overflow: 'hidden' // Prevent overflow
-    }
-  }, loading ?
-  // Skeleton loader for product cards while loading data
-  [...Array(cardsPerRow)].map((_, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    onChange: newCategory => setCategory(newCategory)
+  }), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
+    count: 5
+  }) : error ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, error) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "image-gallery"
+  }, images.map((image, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     key: index,
-    className: "product-item",
-    style: {
-      backgroundColor: cardBgColor,
-      border: `${borderWidth} solid #ddd`,
-      borderRadius: `${borderRadius}px`,
-      padding: cardPadding,
-      margin: cardMargin,
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      height: cardHeight,
-      boxSizing: 'border-box',
-      // Ensure padding and border are included in height
-      overflow: 'hidden',
-      // Prevent overflow
-      width: cardStyle === 'square' ? '100%' : cardWidth // Adjust width based on selected card style
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
-    height: parseInt(imageHeight),
-    width: "100%"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
-    width: "80%"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
-    width: "60%"
-  }))) : products.length > 0 ? products.map(product => {
-    const productCategoriesList = product.category.split(',').map(cat => cat.trim());
-    const isVisible = productCategoriesList.some(cat => selectedCategories.includes(cat));
-    if (isVisible) {
-      return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-        className: "product-item",
-        key: product.id,
-        style: {
-          backgroundColor: cardBgColor,
-          border: `${borderWidth} solid #ddd`,
-          borderRadius: `${borderRadius}px`,
-          padding: cardPadding,
-          margin: cardMargin,
-          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          height: cardHeight,
-          boxSizing: 'border-box',
-          // Ensure padding and border are included in height
-          overflow: 'hidden',
-          // Prevent overflow
-          width: cardStyle === 'square' ? '100%' : cardWidth // Adjust width based on selected card style
-        }
-      }, imageLoading && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
-        height: parseInt(imageHeight),
-        width: "100%"
-      }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
-        src: product.imageUrl,
-        alt: product.name,
-        onLoad: handleImageLoad,
-        loading: "lazy",
-        style: {
-          width: '100%',
-          height: imageHeight,
-          objectFit: 'cover',
-          borderRadius: '8px',
-          display: imageLoading ? 'none' : 'block'
-        }
-      }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", {
-        style: {
-          fontSize: fontSize,
-          fontWeight: '600',
-          marginTop: '15px',
-          color: textColor
-        }
-      }, product.name), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", {
-        style: {
-          fontSize: '14px',
-          color: '#555'
-        }
-      }, "Category: ", product.category || 'No category'), renderRating(product.rating), " ", (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("a", {
-        href: product.permalink,
-        style: {
-          display: 'inline-block',
-          marginTop: 'auto',
-          padding: '10px 20px',
-          backgroundColor: buttonColor,
-          color: 'white',
-          textDecoration: 'none',
-          borderRadius: '4px',
-          textAlign: 'center',
-          transition: 'background-color 0.3s'
-        },
-        onMouseEnter: e => e.target.style.backgroundColor = buttonHoverColor,
-        onMouseLeave: e => e.target.style.backgroundColor = buttonColor
-      }, viewDetailsText));
-    }
-    return null;
-  }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No products found matching the selected filters."))));
-}
+    className: "image-item"
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
+    src: image.image_url,
+    alt: `Image ${index + 1}`
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, image.categories)))));
+};
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (MyImageGalleryBlock);
 
 /***/ }),
 
@@ -5484,7 +5044,7 @@ function SkeletonTheme({ children, ...styleOptions }) {
   \************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"thishanth/filter-plugin","version":"0.1.0","title":"Product Filter Plugin","category":"widgets","icon":"filter","attributes":{"viewDetailsText":{"type":"string","default":"View Details"},"selectedCategories":{"type":"array","default":[]},"products":{"type":"array","default":[]},"cardsPerRow":{"type":"number","default":3},"cardWidth":{"type":"string","default":"auto"},"cardHeight":{"type":"string","default":"300px"},"imageHeight":{"type":"string","default":"200px"},"cardShape":{"type":"string","default":"rectangle"},"cardBgColor":{"type":"string","default":"#ffffff"},"textColor":{"type":"string","default":"#000000"},"fontSize":{"type":"string","default":"16px"},"buttonColor":{"type":"string","default":"#0073aa"},"buttonHoverColor":{"type":"string","default":"#005177"},"cardMargin":{"type":"string","default":"20px"},"cardPadding":{"type":"string","default":"20px"},"borderWidth":{"type":"string","default":"1px"},"borderRadius":{"type":"string","default":"8px"},"cardOuterMargin":{"type":"string","default":"20px"}},"description":"A customizable product filter block that allows you to filter products by category and customize card appearance and layout.","example":{},"supports":{"interactivity":true},"textdomain":"filter-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php","viewScriptModule":"file:./view.js"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"thishanth/gallery-plugin","version":"0.1.0","title":"Gallery Plugin","category":"widgets","icon":"images-alt","attributes":{"selectedCategories":{"type":"array","default":[]},"images":{"type":"array","default":[]},"imagesPerRow":{"type":"number","default":3},"imageHeight":{"type":"string","default":"200px"},"cardWidth":{"type":"string","default":"auto"},"cardShape":{"type":"string","default":"rectangle"},"cardBgColor":{"type":"string","default":"#ffffff"},"borderWidth":{"type":"string","default":"1px"},"borderRadius":{"type":"string","default":"8px"},"cardMargin":{"type":"string","default":"20px"}},"description":"A customizable image gallery block with category filtering and layout options.","example":{},"supports":{"interactivity":true},"textdomain":"gallery-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php","viewScriptModule":"file:./view.js"}');
 
 /***/ })
 
@@ -5639,7 +5199,7 @@ module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/tru
 /******/ 			return __webpack_require__.O(result);
 /******/ 		}
 /******/ 		
-/******/ 		var chunkLoadingGlobal = globalThis["webpackChunkfilter_plugin"] = globalThis["webpackChunkfilter_plugin"] || [];
+/******/ 		var chunkLoadingGlobal = globalThis["webpackChunkimageallery"] = globalThis["webpackChunkimageallery"] || [];
 /******/ 		chunkLoadingGlobal.forEach(webpackJsonpCallback.bind(null, 0));
 /******/ 		chunkLoadingGlobal.push = webpackJsonpCallback.bind(null, chunkLoadingGlobal.push.bind(chunkLoadingGlobal));
 /******/ 	})();

@@ -1,39 +1,31 @@
 {
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
-  "name": "thishanth/filter-plugin",
+  "name": "thishanth/gallery-plugin",
   "version": "0.1.0",
-  "title": "Product Filter Plugin",
+  "title": "Gallery Plugin",
   "category": "widgets",
-  "icon": "filter",
+  "icon": "images-alt",
   "attributes": {
-    "viewDetailsText": {
-      "type": "string",
-      "default": "View Details"
-    },
     "selectedCategories": {
       "type": "array",
       "default": []
     },
-    "products": {
+    "images": {
       "type": "array",
       "default": []
     },
-    "cardsPerRow": {
+    "imagesPerRow": {
       "type": "number",
       "default": 3
-    },
-    "cardWidth": {
-      "type": "string",
-      "default": "auto"
-    },
-    "cardHeight": {
-      "type": "string",
-      "default": "300px"
     },
     "imageHeight": {
       "type": "string",
       "default": "200px"
+    },
+    "cardWidth": {
+      "type": "string",
+      "default": "auto"
     },
     "cardShape": {
       "type": "string",
@@ -43,30 +35,6 @@
       "type": "string",
       "default": "#ffffff"
     },
-    "textColor": {
-      "type": "string",
-      "default": "#000000"
-    },
-    "fontSize": {
-      "type": "string",
-      "default": "16px"
-    },
-    "buttonColor": {
-      "type": "string",
-      "default": "#0073aa"
-    },
-    "buttonHoverColor": {
-      "type": "string",
-      "default": "#005177"
-    },
-    "cardMargin": {
-      "type": "string",
-      "default": "20px"
-    },
-    "cardPadding": {
-      "type": "string",
-      "default": "20px"
-    },
     "borderWidth": {
       "type": "string",
       "default": "1px"
@@ -75,17 +43,17 @@
       "type": "string",
       "default": "8px"
     },
-    "cardOuterMargin": {
+    "cardMargin": {
       "type": "string",
       "default": "20px"
     }
   },
-  "description": "A customizable product filter block that allows you to filter products by category and customize card appearance and layout.",
+  "description": "A customizable image gallery block with category filtering and layout options.",
   "example": {},
   "supports": {
     "interactivity": true
   },
-  "textdomain": "filter-plugin",
+  "textdomain": "gallery-plugin",
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",
   "style": "file:./style-index.css",
