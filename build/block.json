@@ -19,14 +19,6 @@
       "type": "string",
       "default": "200px"
     },
-    "cardWidth": {
-      "type": "string",
-      "default": "auto"
-    },
-    "cardShape": {
-      "type": "string",
-      "default": "rectangle"
-    },
     "cardBgColor": {
       "type": "string",
       "default": "#ffffff"

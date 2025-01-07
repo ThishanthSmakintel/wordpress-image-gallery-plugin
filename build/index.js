@@ -31,12 +31,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// Custom Image Gallery API URL
-const API_BASE_URL = 'http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/filter-images';
-const CATEGORY_API_URL = 'http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/categories';
+// API URLs for fetching images and categories
+const IMAGE_GALLERY_API_URL = "http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/filter-images";
+const CATEGORY_API_URL = "http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/categories";
 
-// State and Loading States
-const MyImageGalleryBlock = props => {
+// Main Component for the Image Gallery Block
+const ImageGalleryBlock = props => {
   const {
     attributes,
     setAttributes
@@ -45,33 +45,34 @@ const MyImageGalleryBlock = props => {
     selectedCategory,
     imagesPerRow,
     cardSize,
-    cardShape,
     cardBgColor,
     borderWidth,
     borderRadius,
     cardMargin,
-    autoAdjustSize
+    autoAdjustSize,
+    borderEnabled,
+    imageHeight
   } = attributes;
 
-  // Ensure cardSize has default values
+  // Default card size if none is selected
   const defaultCardSize = {
-    width: 'auto',
-    height: '200px'
+    width: "auto",
+    height: imageHeight || "200px"
   };
   const validCardSize = cardSize || defaultCardSize;
 
-  // State for categories and images
+  // State hooks for managing data and loading state
   const [categories, setCategories] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
   const [images, setImages] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
   const [loading, setLoading] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(true);
   const [error, setError] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
 
-  // Basic Authentication credentials
-  const username = 'thishanth';
-  const password = 'hht0768340599'; // Replace with actual password or token
-  const authHeader = 'Basic ' + btoa(`${username}:${password}`);
+  // Basic Authentication credentials for API requests
+  const username = "thishanth";
+  const password = "hht0768340599"; // Replace with actual password/token for production
+  const authHeader = "Basic " + btoa(`${username}:${password}`);
 
-  // Fetch categories on mount
+  // Fetch categories when the component mounts
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
     const fetchCategories = async () => {
       try {
@@ -82,21 +83,21 @@ const MyImageGalleryBlock = props => {
         });
         setCategories(response.data);
       } catch (err) {
-        setError('Error fetching categories');
+        setError("Error fetching categories");
       }
     };
     fetchCategories();
-  }, []); // Fetch categories only once on component mount
+  }, []); // Run once on mount
 
-  // Fetch images when category changes or on block load
+  // Fetch images based on selected category
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
     const fetchImages = async () => {
       try {
         setLoading(true);
-        let url = API_BASE_URL;
-        // If selectedCategory is not empty, append category filter
+        let url = IMAGE_GALLERY_API_URL;
+        // Apply category filter if selected
         if (selectedCategory && selectedCategory.length > 0) {
-          url = `${API_BASE_URL}?category_slug=${selectedCategory}`;
+          url = `${IMAGE_GALLERY_API_URL}?category_slug=${selectedCategory}`;
         }
         const response = await axios__WEBPACK_IMPORTED_MODULE_5__["default"].get(url, {
           headers: {
@@ -105,69 +106,100 @@ const MyImageGalleryBlock = props => {
         });
         setImages(response.data);
       } catch (err) {
-        setError('Error fetching images');
+        setError("Error fetching images");
       } finally {
         setLoading(false);
       }
     };
     fetchImages();
-  }, [selectedCategory]); // Re-run when selectedCategory changes
+  }, [selectedCategory]); // Trigger on category change
 
-  // Block Props
+  // Block Props for styling and attributes
   const blockProps = (0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)();
 
-  // Calculate the image width based on the number of images per row
+  // Calculate the image width dynamically based on the number of images per row
   const calculateImageWidth = () => {
-    return `calc(${100 / imagesPerRow}% - 10px)`; // Adjust width dynamically based on images per row
+    return `calc(${100 / imagesPerRow}% - 10px)`; // Adjust width per row
   };
 
-  // Adjust card size based on screen width
-  const adjustCardSize = () => {
-    const width = window.innerWidth;
-    if (width < 600) {
+  // Handle resizing of cards based on window size
+  const handleResize = () => {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 600) {
       setAttributes({
         cardSize: {
-          width: '100%',
-          height: cardShape === 'square' ? '100%' : '200px'
+          width: "100%",
+          height: `${imageHeight || 200}px`
         },
         imagesPerRow: 1
       });
-    } else if (width < 900) {
+    } else if (screenWidth < 900) {
       setAttributes({
         cardSize: {
-          width: 'auto',
-          height: cardShape === 'square' ? '100%' : '250px'
+          width: "auto",
+          height: `${imageHeight || 250}px`
         },
         imagesPerRow: 2
       });
     } else {
       setAttributes({
         cardSize: {
-          width: 'auto',
-          height: cardShape === 'square' ? '100%' : '300px'
+          width: "auto",
+          height: `${imageHeight || 300}px`
         },
         imagesPerRow: 3
       });
     }
   };
 
-  // Reset to default values
+  // Reset card size to default values
   const resetCardSize = () => {
     setAttributes({
       cardSize: {
-        width: 'auto',
-        height: cardShape === 'square' ? '100%' : '200px'
+        width: "auto",
+        height: `${imageHeight || 200}px`
       },
       imagesPerRow: 3
     });
   };
 
-  // Handle Toggle for Auto Adjust
-  const handleAutoAdjustToggle = () => {
+  // Toggle the auto-adjust feature for card size
+  const toggleAutoAdjustSize = () => {
     setAttributes({
       autoAdjustSize: !autoAdjustSize
     });
   };
+
+  // Toggle border settings
+  const toggleBorderEnabled = () => {
+    setAttributes({
+      borderEnabled: !borderEnabled
+    });
+  };
+
+  // Handle changes to image height via range slider
+  const handleHeightChange = value => {
+    setAttributes({
+      imageHeight: `${value}px`,
+      cardSize: {
+        ...cardSize,
+        height: `${value}px`
+      }
+    });
+  };
+
+  // Set card height to auto to allow for dynamic adjustment
+  const setCardHeightToAuto = () => {
+    setAttributes({
+      imageHeight: "auto",
+      cardSize: {
+        width: "auto",
+        height: "auto"
+      }
+    });
+  };
+
+  // Return the rendered component
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     ...blockProps
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.InspectorControls, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
@@ -177,8 +209,8 @@ const MyImageGalleryBlock = props => {
     label: "Select Category",
     value: selectedCategory,
     options: [{
-      label: 'All Categories',
-      value: ''
+      label: "All Categories",
+      value: ""
     }, ...categories.map(cat => ({
       label: cat.name,
       value: cat.slug
@@ -190,16 +222,16 @@ const MyImageGalleryBlock = props => {
     label: "Images Per Row",
     value: imagesPerRow,
     options: [{
-      label: '1 Image Per Row',
+      label: "1 Image Per Row",
       value: 1
     }, {
-      label: '2 Images Per Row',
+      label: "2 Images Per Row",
       value: 2
     }, {
-      label: '3 Images Per Row',
+      label: "3 Images Per Row",
       value: 3
     }, {
-      label: '4 Images Per Row',
+      label: "4 Images Per Row",
       value: 4
     }],
     onChange: newImagesPerRow => setAttributes({
@@ -208,31 +240,13 @@ const MyImageGalleryBlock = props => {
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ToggleControl, {
     label: "Auto Adjust Card Size",
     checked: autoAdjustSize,
-    onChange: handleAutoAdjustToggle
+    onChange: toggleAutoAdjustSize
   }), !autoAdjustSize && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Card Height",
-    value: parseInt(validCardSize.height),
-    onChange: value => setAttributes({
-      cardSize: {
-        ...validCardSize,
-        height: `${value}px`
-      }
-    }),
+    value: parseInt(validCardSize.height, 10),
+    onChange: handleHeightChange,
     min: 100,
     max: 1500
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
-    label: "Card Shape",
-    value: cardShape,
-    options: [{
-      label: 'Rectangle',
-      value: 'rectangle'
-    }, {
-      label: 'Square',
-      value: 'square'
-    }],
-    onChange: newShape => setAttributes({
-      cardShape: newShape
-    })
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ColorPalette, {
     label: "Card Background Color",
     value: cardBgColor,
@@ -241,55 +255,62 @@ const MyImageGalleryBlock = props => {
     })
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Border Width",
-    value: parseInt(borderWidth),
+    value: parseInt(borderWidth, 10),
     onChange: value => setAttributes({
       borderWidth: `${value}px`
     }),
     min: 1,
-    max: 10
+    max: 10,
+    disabled: !borderEnabled
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Border Radius",
-    value: parseInt(borderRadius),
+    value: parseInt(borderRadius, 10),
     onChange: value => setAttributes({
       borderRadius: `${value}px`
     }),
     min: 0,
-    max: 50
+    max: 50,
+    disabled: !borderEnabled
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Card Margin",
-    value: parseInt(cardMargin),
+    value: parseInt(cardMargin, 10),
     onChange: value => setAttributes({
       cardMargin: `${value}px`
     }),
     min: 0,
     max: 50
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ToggleControl, {
+    label: "Enable Border",
+    checked: borderEnabled,
+    onChange: toggleBorderEnabled
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
     isPrimary: true,
-    onClick: adjustCardSize
+    onClick: handleResize
   }, "Set Suitable Card Size"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
     isSecondary: true,
     onClick: resetCardSize
-  }, "Reset Card Size"))), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  }, "Reset Card Size"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
+    isSecondary: true,
+    onClick: setCardHeightToAuto
+  }, "Set Card Height to Auto"))), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
     height: 20,
     width: 200,
     style: {
-      marginBottom: '10px'
+      marginBottom: "10px"
     }
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "image-gallery",
     style: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      gap: '10px'
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "10px"
     }
   }, [...Array(6)].map((_, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     key: index,
     className: "image-item",
     style: {
-      width: 'calc(33% - 10px)',
-      // Three images per row with gap
-      boxSizing: 'border-box'
+      width: "calc(33% - 10px)",
+      boxSizing: "border-box"
     }
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
     height: validCardSize.height,
@@ -298,41 +319,60 @@ const MyImageGalleryBlock = props => {
     width: 60,
     height: 15,
     style: {
-      marginTop: '10px',
-      marginLeft: 'auto',
-      marginRight: 'auto'
+      marginTop: "10px",
+      marginLeft: "auto",
+      marginRight: "auto"
     }
-  }))))) : error ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, error) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, images.length > 0 ? `${images.length} images found` : 'No images found'), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }))))) : error ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, error) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, images.length > 0 ? `${images.length} images found` : "No images found"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "image-gallery",
     style: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      gap: '10px'
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "10px"
     }
   }, images.length > 0 ? images.map((image, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     key: index,
     className: "image-item",
     style: {
-      width: calculateImageWidth(),
-      boxSizing: 'border-box',
-      borderRadius: borderRadius,
       margin: cardMargin,
+      padding: 0,
+      width: calculateImageWidth(),
+      boxSizing: "border-box",
+      borderRadius: borderRadius,
       backgroundColor: cardBgColor,
-      border: `${borderWidth} solid #ccc`,
-      borderRadius: cardShape === 'square' ? '0' : borderRadius
+      border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      alignItems: "stretch",
+      height: validCardSize.height
+    }
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "image-container",
+    style: {
+      width: "100%",
+      height: "100%",
+      position: "relative"
     }
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
     src: image.image_url,
     alt: `Image ${index + 1}`,
     style: {
-      width: '100%',
-      height: autoAdjustSize ? 'auto' : validCardSize.height,
-      borderRadius: cardShape === 'square' ? '0' : borderRadius
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      // Ensures image fills space without distortion
+      borderRadius: borderRadius
     }
-  }))) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category."))));
+  })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "image-title",
+    style: {
+      marginTop: "10px",
+      textAlign: "center"
+    }
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, image.title)))) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category."))));
 };
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (MyImageGalleryBlock);
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (ImageGalleryBlock);
 
 /***/ }),
 
@@ -5286,7 +5326,7 @@ function SkeletonTheme({ children, ...styleOptions }) {
   \************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"thishanth/gallery-plugin","version":"0.1.0","title":"Gallery Plugin","category":"widgets","icon":"images-alt","attributes":{"selectedCategory":{"type":"string","default":""},"imagesPerRow":{"type":"number","default":3},"imageHeight":{"type":"string","default":"200px"},"cardWidth":{"type":"string","default":"auto"},"cardShape":{"type":"string","default":"rectangle"},"cardBgColor":{"type":"string","default":"#ffffff"},"borderWidth":{"type":"string","default":"1px"},"borderRadius":{"type":"string","default":"8px"},"cardMargin":{"type":"string","default":"20px"}},"description":"A customizable image gallery block with category filtering and layout options.","example":{},"supports":{"interactivity":true},"textdomain":"gallery-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php","viewScriptModule":"file:./view.js"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"thishanth/gallery-plugin","version":"0.1.0","title":"Gallery Plugin","category":"widgets","icon":"images-alt","attributes":{"selectedCategory":{"type":"string","default":""},"imagesPerRow":{"type":"number","default":3},"imageHeight":{"type":"string","default":"200px"},"cardBgColor":{"type":"string","default":"#ffffff"},"borderWidth":{"type":"string","default":"1px"},"borderRadius":{"type":"string","default":"8px"},"cardMargin":{"type":"string","default":"20px"}},"description":"A customizable image gallery block with category filtering and layout options.","example":{},"supports":{"interactivity":true},"textdomain":"gallery-plugin","editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php","viewScriptModule":"file:./view.js"}');
 
 /***/ })
 

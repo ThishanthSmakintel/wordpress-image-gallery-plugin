@@ -1,293 +1,320 @@
-import { useState, useEffect } from '@wordpress/element';
-import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
+import { useState, useEffect } from "@wordpress/element";
+import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import {
-	PanelBody,
-	SelectControl,
-	RangeControl,
-	ColorPalette,
-	Button,
-	ToggleControl,
-} from '@wordpress/components';
-import axios from 'axios';
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
+  PanelBody,
+  SelectControl,
+  RangeControl,
+  ColorPalette,
+  Button,
+  ToggleControl,
+} from "@wordpress/components";
+import axios from "axios";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
-// Custom Image Gallery API URL
-const API_BASE_URL = 'http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/filter-images';
-const CATEGORY_API_URL = 'http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/categories';
+// API URLs for fetching images and categories
+const IMAGE_GALLERY_API_URL = "http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/filter-images";
+const CATEGORY_API_URL = "http://localhost/wordpress.thishanth/wp-json/imagegallery/v1/categories";
 
-// State and Loading States
-const MyImageGalleryBlock = (props) => {
-	const { attributes, setAttributes } = props;
-	const { selectedCategory, imagesPerRow, cardSize, cardShape, cardBgColor, borderWidth, borderRadius, cardMargin, autoAdjustSize } = attributes;
+// Main Component for the Image Gallery Block
+const ImageGalleryBlock = (props) => {
+  const { attributes, setAttributes } = props;
+  const {
+    selectedCategory,
+    imagesPerRow,
+    cardSize,
+    cardBgColor,
+    borderWidth,
+    borderRadius,
+    cardMargin,
+    autoAdjustSize,
+    borderEnabled,
+    imageHeight,
+  } = attributes;
 
-	// Ensure cardSize has default values
-	const defaultCardSize = { width: 'auto', height: '200px' };
-	const validCardSize = cardSize || defaultCardSize;
+  // Default card size if none is selected
+  const defaultCardSize = { width: "auto", height: imageHeight || "200px" };
+  const validCardSize = cardSize || defaultCardSize;
 
-	// State for categories and images
-	const [categories, setCategories] = useState([]);
-	const [images, setImages] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(null);
+  // State hooks for managing data and loading state
+  const [categories, setCategories] = useState([]);
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-	// Basic Authentication credentials
-	const username = 'thishanth';
-	const password = 'hht0768340599'; // Replace with actual password or token
-	const authHeader = 'Basic ' + btoa(`${username}:${password}`);
+  // Basic Authentication credentials for API requests
+  const username = "thishanth";
+  const password = "hht0768340599"; // Replace with actual password/token for production
+  const authHeader = "Basic " + btoa(`${username}:${password}`);
 
-	// Fetch categories on mount
-	useEffect(() => {
-		const fetchCategories = async () => {
-			try {
-				const response = await axios.get(CATEGORY_API_URL, {
-					headers: {
-						Authorization: authHeader,
-					},
-				});
-				setCategories(response.data);
-			} catch (err) {
-				setError('Error fetching categories');
-			}
-		};
-		fetchCategories();
-	}, []); // Fetch categories only once on component mount
+  // Fetch categories when the component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(CATEGORY_API_URL, {
+          headers: {
+            Authorization: authHeader,
+          },
+        });
+        setCategories(response.data);
+      } catch (err) {
+        setError("Error fetching categories");
+      }
+    };
+    fetchCategories();
+  }, []); // Run once on mount
 
-	// Fetch images when category changes or on block load
-	useEffect(() => {
-		const fetchImages = async () => {
-			try {
-				setLoading(true);
-				let url = API_BASE_URL;
-				// If selectedCategory is not empty, append category filter
-				if (selectedCategory && selectedCategory.length > 0) {
-					url = `${API_BASE_URL}?category_slug=${selectedCategory}`;
-				}
-				const response = await axios.get(url, {
-					headers: {
-						Authorization: authHeader,
-					},
-				});
-				setImages(response.data);
-			} catch (err) {
-				setError('Error fetching images');
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchImages();
-	}, [selectedCategory]); // Re-run when selectedCategory changes
+  // Fetch images based on selected category
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        setLoading(true);
+        let url = IMAGE_GALLERY_API_URL;
+        // Apply category filter if selected
+        if (selectedCategory && selectedCategory.length > 0) {
+          url = `${IMAGE_GALLERY_API_URL}?category_slug=${selectedCategory}`;
+        }
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: authHeader,
+          },
+        });
+        setImages(response.data);
+      } catch (err) {
+        setError("Error fetching images");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchImages();
+  }, [selectedCategory]); // Trigger on category change
 
-	// Block Props
-	const blockProps = useBlockProps();
+  // Block Props for styling and attributes
+  const blockProps = useBlockProps();
 
-	// Calculate the image width based on the number of images per row
-	const calculateImageWidth = () => {
-		return `calc(${100 / imagesPerRow}% - 10px)`; // Adjust width dynamically based on images per row
-	};
+  // Calculate the image width dynamically based on the number of images per row
+  const calculateImageWidth = () => {
+    return `calc(${100 / imagesPerRow}% - 10px)`; // Adjust width per row
+  };
 
-	// Adjust card size based on screen width
-	const adjustCardSize = () => {
-		const width = window.innerWidth;
-		if (width < 600) {
-			setAttributes({
-				cardSize: { width: '100%', height: cardShape === 'square' ? '100%' : '200px' },
-				imagesPerRow: 1,
-			});
-		} else if (width < 900) {
-			setAttributes({
-				cardSize: { width: 'auto', height: cardShape === 'square' ? '100%' : '250px' },
-				imagesPerRow: 2,
-			});
-		} else {
-			setAttributes({
-				cardSize: { width: 'auto', height: cardShape === 'square' ? '100%' : '300px' },
-				imagesPerRow: 3,
-			});
-		}
-	};
+  // Handle resizing of cards based on window size
+  const handleResize = () => {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 600) {
+      setAttributes({
+        cardSize: { width: "100%", height: `${imageHeight || 200}px` },
+        imagesPerRow: 1,
+      });
+    } else if (screenWidth < 900) {
+      setAttributes({
+        cardSize: { width: "auto", height: `${imageHeight || 250}px` },
+        imagesPerRow: 2,
+      });
+    } else {
+      setAttributes({
+        cardSize: { width: "auto", height: `${imageHeight || 300}px` },
+        imagesPerRow: 3,
+      });
+    }
+  };
 
-	// Reset to default values
-	const resetCardSize = () => {
-		setAttributes({
-			cardSize: { width: 'auto', height: cardShape === 'square' ? '100%' : '200px' },
-			imagesPerRow: 3,
-		});
-	};
+  // Reset card size to default values
+  const resetCardSize = () => {
+    setAttributes({
+      cardSize: { width: "auto", height: `${imageHeight || 200}px` },
+      imagesPerRow: 3,
+    });
+  };
 
-	// Handle Toggle for Auto Adjust
-	const handleAutoAdjustToggle = () => {
-		setAttributes({ autoAdjustSize: !autoAdjustSize });
-	};
+  // Toggle the auto-adjust feature for card size
+  const toggleAutoAdjustSize = () => {
+    setAttributes({ autoAdjustSize: !autoAdjustSize });
+  };
 
-	return (
-		<div {...blockProps}>
-			{/* Settings Panel for Category Select and Images Per Row */}
-			<InspectorControls>
-				<PanelBody title="Gallery Settings" initialOpen={true}>
-					<SelectControl
-						label="Select Category"
-						value={selectedCategory}
-						options={[{ label: 'All Categories', value: '' }, ...categories.map((cat) => ({ label: cat.name, value: cat.slug }))]}
-						onChange={(newCategory) => setAttributes({ selectedCategory: newCategory })}
-					/>
+  // Toggle border settings
+  const toggleBorderEnabled = () => {
+    setAttributes({ borderEnabled: !borderEnabled });
+  };
 
-					<SelectControl
-						label="Images Per Row"
-						value={imagesPerRow}
-						options={[
-							{ label: '1 Image Per Row', value: 1 },
-							{ label: '2 Images Per Row', value: 2 },
-							{ label: '3 Images Per Row', value: 3 },
-							{ label: '4 Images Per Row', value: 4 },
-						]}
-						onChange={(newImagesPerRow) => setAttributes({ imagesPerRow: Number(newImagesPerRow) })}
-					/>
+  // Handle changes to image height via range slider
+  const handleHeightChange = (value) => {
+    setAttributes({
+      imageHeight: `${value}px`,
+      cardSize: {
+        ...cardSize,
+        height: `${value}px`,
+      },
+    });
+  };
 
-					{/* Card Size Settings */}
-					<ToggleControl
-						label="Auto Adjust Card Size"
-						checked={autoAdjustSize}
-						onChange={handleAutoAdjustToggle}
-					/>
+  // Set card height to auto to allow for dynamic adjustment
+  const setCardHeightToAuto = () => {
+    setAttributes({
+      imageHeight: "auto",
+      cardSize: { width: "auto", height: "auto" },
+    });
+  };
 
-					{/* If Auto Adjust is disabled, show the range for fixed height */}
-					{!autoAdjustSize && (
-						<RangeControl
-							label="Card Height"
-							value={parseInt(validCardSize.height)}
-							onChange={(value) => setAttributes({ cardSize: { ...validCardSize, height: `${value}px` } })}
-							min={100}
-							max={1500}
-						/>
-					)}
+  // Return the rendered component
+  return (
+    <div {...blockProps}>
+      {/* Block Inspector Controls */}
+      <InspectorControls>
+        <PanelBody title="Gallery Settings" initialOpen={true}>
+          {/* Category Select Dropdown */}
+          <SelectControl
+            label="Select Category"
+            value={selectedCategory}
+            options={[{ label: "All Categories", value: "" }, ...categories.map((cat) => ({
+              label: cat.name,
+              value: cat.slug,
+            }))]}
+            onChange={(newCategory) => setAttributes({ selectedCategory: newCategory })}
+          />
 
-					<SelectControl
-						label="Card Shape"
-						value={cardShape}
-						options={[
-							{ label: 'Rectangle', value: 'rectangle' },
-							{ label: 'Square', value: 'square' },
-						]}
-						onChange={(newShape) => setAttributes({ cardShape: newShape })}
-					/>
+          {/* Images per row control */}
+          <SelectControl
+            label="Images Per Row"
+            value={imagesPerRow}
+            options={[
+              { label: "1 Image Per Row", value: 1 },
+              { label: "2 Images Per Row", value: 2 },
+              { label: "3 Images Per Row", value: 3 },
+              { label: "4 Images Per Row", value: 4 },
+            ]}
+            onChange={(newImagesPerRow) => setAttributes({ imagesPerRow: Number(newImagesPerRow) })}
+          />
 
-					<ColorPalette
-						label="Card Background Color"
-						value={cardBgColor}
-						onChange={(newColor) => setAttributes({ cardBgColor: newColor })}
-					/>
+          {/* Toggle for auto-adjusting card size */}
+          <ToggleControl
+            label="Auto Adjust Card Size"
+            checked={autoAdjustSize}
+            onChange={toggleAutoAdjustSize}
+          />
 
-					<RangeControl
-						label="Border Width"
-						value={parseInt(borderWidth)}
-						onChange={(value) => setAttributes({ borderWidth: `${value}px` })}
-						min={1}
-						max={10}
-					/>
+          {/* Fixed height range control */}
+          {!autoAdjustSize && (
+            <RangeControl
+              label="Card Height"
+              value={parseInt(validCardSize.height, 10)}
+              onChange={handleHeightChange}
+              min={100}
+              max={1500}
+            />
+          )}
 
-					<RangeControl
-						label="Border Radius"
-						value={parseInt(borderRadius)}
-						onChange={(value) => setAttributes({ borderRadius: `${value}px` })}
-						min={0}
-						max={50}
-					/>
+          {/* Card background color palette */}
+          <ColorPalette
+            label="Card Background Color"
+            value={cardBgColor}
+            onChange={(newColor) => setAttributes({ cardBgColor: newColor })}
+          />
 
-					<RangeControl
-						label="Card Margin"
-						value={parseInt(cardMargin)}
-						onChange={(value) => setAttributes({ cardMargin: `${value}px` })}
-						min={0}
-						max={50}
-					/>
+          {/* Border width and radius controls */}
+          <RangeControl
+            label="Border Width"
+            value={parseInt(borderWidth, 10)}
+            onChange={(value) => setAttributes({ borderWidth: `${value}px` })}
+            min={1}
+            max={10}
+            disabled={!borderEnabled}
+          />
+          <RangeControl
+            label="Border Radius"
+            value={parseInt(borderRadius, 10)}
+            onChange={(value) => setAttributes({ borderRadius: `${value}px` })}
+            min={0}
+            max={50}
+            disabled={!borderEnabled}
+          />
 
-					<Button isPrimary onClick={adjustCardSize}>Set Suitable Card Size</Button>
-					<Button isSecondary onClick={resetCardSize}>Reset Card Size</Button>
-				</PanelBody>
-			</InspectorControls>
+          {/* Card margin control */}
+          <RangeControl
+            label="Card Margin"
+            value={parseInt(cardMargin, 10)}
+            onChange={(value) => setAttributes({ cardMargin: `${value}px` })}
+            min={0}
+            max={50}
+          />
 
-			{/* Display image count and gallery */}
-			{loading ? (
-				<div>
-					<Skeleton height={20} width={200} style={{ marginBottom: '10px' }} />
+          {/* Border enabled toggle */}
+          <ToggleControl
+            label="Enable Border"
+            checked={borderEnabled}
+            onChange={toggleBorderEnabled}
+          />
 
-					{/* Skeleton for Image Gallery */}
-					<div
-						className="image-gallery"
-						style={{
-							display: 'flex',
-							flexWrap: 'wrap',
-							justifyContent: 'space-between',
-							gap: '10px',
-						}}
-					>
-						{/* Skeleton for each image item */}
-						{[...Array(6)].map((_, index) => (
-							<div
-								key={index}
-								className="image-item"
-								style={{
-									width: 'calc(33% - 10px)', // Three images per row with gap
-									boxSizing: 'border-box',
-								}}
-							>
-								<Skeleton height={validCardSize.height} width="100%" />
-								<Skeleton width={60} height={15} style={{ marginTop: '10px', marginLeft: 'auto', marginRight: 'auto' }} />
-							</div>
-						))}
-					</div>
-				</div>
-			) : error ? (
-				<p>{error}</p>
-			) : (
-				<div>
-					<p>{images.length > 0 ? `${images.length} images found` : 'No images found'}</p>
+          {/* Buttons for adjusting card size */}
+          <Button isPrimary onClick={handleResize}>Set Suitable Card Size</Button>
+          <Button isSecondary onClick={resetCardSize}>Reset Card Size</Button>
+          <Button isSecondary onClick={setCardHeightToAuto}>Set Card Height to Auto</Button>
+        </PanelBody>
+      </InspectorControls>
 
-					{/* Image Gallery with Flexbox */}
-					<div
-						className="image-gallery"
-						style={{
-							display: 'flex',
-							flexWrap: 'wrap',
-							justifyContent: 'space-between',
-							gap: '10px',
-						}}
-					>
-						{images.length > 0 ? (
-							images.map((image, index) => (
-								<div
-									key={index}
-									className="image-item"
-									style={{
-										width: calculateImageWidth(),
-										boxSizing: 'border-box',
-										borderRadius: borderRadius,
-										margin: cardMargin,
-										backgroundColor: cardBgColor,
-										border: `${borderWidth} solid #ccc`,
-										borderRadius: cardShape === 'square' ? '0' : borderRadius,
-									}}
-								>
-									<img
-										src={image.image_url}
-										alt={`Image ${index + 1}`}
-										style={{
-											width: '100%',
-											height: autoAdjustSize ? 'auto' : validCardSize.height,
-											borderRadius: cardShape === 'square' ? '0' : borderRadius,
-										}}
-									/>
-								</div>
-							))
-						) : (
-							<p>No images found for this category.</p>
-						)}
-					</div>
-				</div>
-			)}
-		</div>
-	);
+      {/* Loading and error handling */}
+      {loading ? (
+        <div>
+          <Skeleton height={20} width={200} style={{ marginBottom: "10px" }} />
+          <div className="image-gallery" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="image-item" style={{ width: "calc(33% - 10px)", boxSizing: "border-box" }}>
+                <Skeleton height={validCardSize.height} width="100%" />
+                <Skeleton width={60} height={15} style={{ marginTop: "10px", marginLeft: "auto", marginRight: "auto" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : error ? (
+        <p>{error}</p>
+      ) : (
+        <div>
+          <p>{images.length > 0 ? `${images.length} images found` : "No images found"}</p>
+          <div className="image-gallery" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {images.length > 0 ? (
+              images.map((image, index) => (
+                <div
+                  key={index}
+                  className="image-item"
+                  style={{
+                    margin: cardMargin,
+                    padding: 0,
+                    width: calculateImageWidth(),
+                    boxSizing: "border-box",
+                    borderRadius: borderRadius,
+                    backgroundColor: cardBgColor,
+                    border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    alignItems: "stretch",
+                    height: validCardSize.height,
+                  }}
+                >
+                  <div className="image-container" style={{ width: "100%", height: "100%", position: "relative" }}>
+                    <img
+                      src={image.image_url}
+                      alt={`Image ${index + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover", // Ensures image fills space without distortion
+                        borderRadius: borderRadius,
+                      }}
+                    />
+                  </div>
+                  <div className="image-title" style={{ marginTop: "10px", textAlign: "center" }}>
+                    <h3>{image.title}</h3>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No images found for this category.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
-export default MyImageGalleryBlock;
+export default ImageGalleryBlock;

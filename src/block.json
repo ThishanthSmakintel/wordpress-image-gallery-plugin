@@ -8,7 +8,7 @@
 	"icon": "images-alt",
 	"attributes": {
 		"selectedCategory": {
-			"type": "string", 
+			"type": "string",
 			"default": ""
 		},
 		"imagesPerRow": {
@@ -16,31 +16,23 @@
 			"default": 3
 		},
 		"imageHeight": {
-			"type": "string",
+			"type": "string", 
 			"default": "200px"
-		},
-		"cardWidth": {
-			"type": "string",
-			"default": "auto"
-		},
-		"cardShape": {
-			"type": "string",
-			"default": "rectangle"
 		},
 		"cardBgColor": {
 			"type": "string",
 			"default": "#ffffff"
 		},
 		"borderWidth": {
-			"type": "string",
+			"type": "string",  
 			"default": "1px"
 		},
 		"borderRadius": {
-			"type": "string",
+			"type": "string", 
 			"default": "8px"
 		},
 		"cardMargin": {
-			"type": "string",
+			"type": "string", 
 			"default": "20px"
 		}
 	},
