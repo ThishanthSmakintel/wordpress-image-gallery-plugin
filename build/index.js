@@ -43,23 +43,17 @@ const ImageGalleryBlock = props => {
   } = props;
   const {
     selectedCategory,
-    imagesPerRow,
-    cardSize,
+    imagesPerRowDesktop,
+    imagesPerRowMobile,
+    cardSizeDesktop,
+    cardSizeMobile,
     cardBgColor,
     borderWidth,
     borderRadius,
     cardMargin,
-    autoAdjustSize,
     borderEnabled,
-    imageHeight
+    isResponsive
   } = attributes;
-
-  // Default card size if none is selected
-  const defaultCardSize = {
-    width: "auto",
-    height: imageHeight || "200px"
-  };
-  const validCardSize = cardSize || defaultCardSize;
 
   // State hooks for managing data and loading state
   const [categories, setCategories] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
@@ -83,7 +77,7 @@ const ImageGalleryBlock = props => {
         });
         setCategories(response.data);
       } catch (err) {
-        setError("Error fetching categories");
+        setError("Error fetching categories. Please try again later.");
       }
     };
     fetchCategories();
@@ -106,7 +100,7 @@ const ImageGalleryBlock = props => {
         });
         setImages(response.data);
       } catch (err) {
-        setError("Error fetching images");
+        setError("Error fetching images. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -118,86 +112,35 @@ const ImageGalleryBlock = props => {
   const blockProps = (0,_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.useBlockProps)();
 
   // Calculate the image width dynamically based on the number of images per row
-  const calculateImageWidth = () => {
-    return `calc(${100 / imagesPerRow}% - 10px)`; // Adjust width per row
+  const calculateImageWidth = isMobileView => {
+    return `calc(${100 / (isMobileView ? imagesPerRowMobile : imagesPerRowDesktop)}% - 10px)`; // Adjust width per row based on view
   };
 
   // Handle resizing of cards based on window size
   const handleResize = () => {
-    const screenWidth = window.innerWidth;
-    if (screenWidth < 600) {
-      setAttributes({
-        cardSize: {
-          width: "100%",
-          height: `${imageHeight || 200}px`
-        },
-        imagesPerRow: 1
-      });
-    } else if (screenWidth < 900) {
-      setAttributes({
-        cardSize: {
-          width: "auto",
-          height: `${imageHeight || 250}px`
-        },
-        imagesPerRow: 2
-      });
-    } else {
-      setAttributes({
-        cardSize: {
-          width: "auto",
-          height: `${imageHeight || 300}px`
-        },
-        imagesPerRow: 3
-      });
+    if (isResponsive) {
+      const screenWidth = window.innerWidth;
+      // Apply mobile settings for smaller screens
+      if (screenWidth < 600) {
+        setAttributes({
+          imagesPerRowDesktop: imagesPerRowDesktop,
+          // Keep desktop setting as is
+          imagesPerRowMobile: imagesPerRowMobile // Set mobile number of columns
+        });
+      }
     }
   };
+  (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isResponsive]);
 
-  // Reset card size to default values
-  const resetCardSize = () => {
-    setAttributes({
-      cardSize: {
-        width: "auto",
-        height: `${imageHeight || 200}px`
-      },
-      imagesPerRow: 3
-    });
-  };
-
-  // Toggle the auto-adjust feature for card size
-  const toggleAutoAdjustSize = () => {
-    setAttributes({
-      autoAdjustSize: !autoAdjustSize
-    });
-  };
-
-  // Toggle border settings
-  const toggleBorderEnabled = () => {
-    setAttributes({
-      borderEnabled: !borderEnabled
-    });
-  };
-
-  // Handle changes to image height via range slider
-  const handleHeightChange = value => {
-    setAttributes({
-      imageHeight: `${value}px`,
-      cardSize: {
-        ...cardSize,
-        height: `${value}px`
-      }
-    });
-  };
-
-  // Set card height to auto to allow for dynamic adjustment
-  const setCardHeightToAuto = () => {
-    setAttributes({
-      imageHeight: "auto",
-      cardSize: {
-        width: "auto",
-        height: "auto"
-      }
-    });
-  };
+  // Ensure cardSizeDesktop and cardSizeMobile are not undefined
+  const cardHeightDesktop = cardSizeDesktop?.height || '300px';
+  const cardHeightMobile = cardSizeMobile?.height || '200px';
 
   // Return the rendered component
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
@@ -218,33 +161,42 @@ const ImageGalleryBlock = props => {
     onChange: newCategory => setAttributes({
       selectedCategory: newCategory
     })
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
-    label: "Images Per Row",
-    value: imagesPerRow,
-    options: [{
-      label: "1 Image Per Row",
-      value: 1
-    }, {
-      label: "2 Images Per Row",
-      value: 2
-    }, {
-      label: "3 Images Per Row",
-      value: 3
-    }, {
-      label: "4 Images Per Row",
-      value: 4
-    }],
-    onChange: newImagesPerRow => setAttributes({
-      imagesPerRow: Number(newImagesPerRow)
-    })
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ToggleControl, {
-    label: "Auto Adjust Card Size",
-    checked: autoAdjustSize,
-    onChange: toggleAutoAdjustSize
-  }), !autoAdjustSize && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Card Height",
-    value: parseInt(validCardSize.height, 10),
-    onChange: handleHeightChange,
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+    label: "Images Per Row (Desktop)",
+    value: imagesPerRowDesktop,
+    onChange: newImagesPerRowDesktop => setAttributes({
+      imagesPerRowDesktop: Number(newImagesPerRowDesktop)
+    }),
+    min: 1,
+    max: 12
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+    label: "Images Per Row (Mobile)",
+    value: imagesPerRowMobile,
+    onChange: newImagesPerRowMobile => setAttributes({
+      imagesPerRowMobile: Number(newImagesPerRowMobile)
+    }),
+    min: 1,
+    max: 12
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+    label: "Card Height (Desktop)",
+    value: parseInt(cardHeightDesktop, 10),
+    onChange: newHeight => setAttributes({
+      cardSizeDesktop: {
+        ...cardSizeDesktop,
+        height: `${newHeight}px`
+      }
+    }),
+    min: 100,
+    max: 1500
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+    label: "Card Height (Mobile)",
+    value: parseInt(cardHeightMobile, 10),
+    onChange: newHeight => setAttributes({
+      cardSizeMobile: {
+        ...cardSizeMobile,
+        height: `${newHeight}px`
+      }
+    }),
     min: 100,
     max: 1500
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ColorPalette, {
@@ -282,17 +234,16 @@ const ImageGalleryBlock = props => {
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ToggleControl, {
     label: "Enable Border",
     checked: borderEnabled,
-    onChange: toggleBorderEnabled
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
-    isPrimary: true,
-    onClick: handleResize
-  }, "Set Suitable Card Size"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
-    isSecondary: true,
-    onClick: resetCardSize
-  }, "Reset Card Size"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.Button, {
-    isSecondary: true,
-    onClick: setCardHeightToAuto
-  }, "Set Card Height to Auto"))), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
+    onChange: () => setAttributes({
+      borderEnabled: !borderEnabled
+    })
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.ToggleControl, {
+    label: "Enable Responsiveness",
+    checked: isResponsive,
+    onChange: () => setAttributes({
+      isResponsive: !isResponsive
+    })
+  }))), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
     height: 20,
     width: 200,
     style: {
@@ -313,7 +264,7 @@ const ImageGalleryBlock = props => {
       boxSizing: "border-box"
     }
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
-    height: validCardSize.height,
+    height: cardHeightDesktop,
     width: "100%"
   }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
     width: 60,
@@ -323,54 +274,61 @@ const ImageGalleryBlock = props => {
       marginLeft: "auto",
       marginRight: "auto"
     }
-  }))))) : error ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, error) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, images.length > 0 ? `${images.length} images found` : "No images found"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }))))) : error ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", {
+    style: {
+      color: "red"
+    }
+  }, error) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, images.length > 0 ? `${images.length} images found` : "No images found"), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "image-gallery",
     style: {
       display: "flex",
       flexWrap: "wrap",
       gap: "10px"
     }
-  }, images.length > 0 ? images.map((image, index) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    key: index,
-    className: "image-item",
-    style: {
-      margin: cardMargin,
-      padding: 0,
-      width: calculateImageWidth(),
-      boxSizing: "border-box",
-      borderRadius: borderRadius,
-      backgroundColor: cardBgColor,
-      border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      alignItems: "stretch",
-      height: validCardSize.height
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "image-container",
-    style: {
-      width: "100%",
-      height: "100%",
-      position: "relative"
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
-    src: image.image_url,
-    alt: `Image ${index + 1}`,
-    style: {
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      // Ensures image fills space without distortion
-      borderRadius: borderRadius
-    }
-  })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
-    className: "image-title",
-    style: {
-      marginTop: "10px",
-      textAlign: "center"
-    }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, image.title)))) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category."))));
+  }, images.length > 0 ? images.map((image, index) => {
+    const isMobileView = window.innerWidth < 600; // Check if mobile view
+    return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+      key: index,
+      className: "image-item",
+      style: {
+        margin: cardMargin,
+        padding: 0,
+        width: calculateImageWidth(isMobileView),
+        boxSizing: "border-box",
+        borderRadius: borderRadius,
+        backgroundColor: cardBgColor,
+        border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "stretch",
+        height: isMobileView ? cardHeightMobile : cardHeightDesktop
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+      className: "image-container",
+      style: {
+        width: "100%",
+        height: "100%",
+        position: "relative"
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
+      src: image.image_url,
+      alt: `Image ${index + 1}`,
+      style: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        // Ensures image fills space without distortion
+        borderRadius: borderRadius
+      }
+    })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+      className: "image-title",
+      style: {
+        marginTop: "10px",
+        textAlign: "center"
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, image.title)));
+  }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category."))));
 };
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (ImageGalleryBlock);
 

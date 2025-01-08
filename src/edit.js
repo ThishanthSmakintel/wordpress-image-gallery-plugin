@@ -5,7 +5,6 @@ import {
   SelectControl,
   RangeControl,
   ColorPalette,
-  Button,
   ToggleControl,
 } from "@wordpress/components";
 import axios from "axios";
@@ -21,20 +20,17 @@ const ImageGalleryBlock = (props) => {
   const { attributes, setAttributes } = props;
   const {
     selectedCategory,
-    imagesPerRow,
-    cardSize,
+    imagesPerRowDesktop,
+    imagesPerRowMobile,
+    cardSizeDesktop,
+    cardSizeMobile,
     cardBgColor,
     borderWidth,
     borderRadius,
     cardMargin,
-    autoAdjustSize,
     borderEnabled,
-    imageHeight,
+    isResponsive,
   } = attributes;
-
-  // Default card size if none is selected
-  const defaultCardSize = { width: "auto", height: imageHeight || "200px" };
-  const validCardSize = cardSize || defaultCardSize;
 
   // State hooks for managing data and loading state
   const [categories, setCategories] = useState([]);
@@ -58,7 +54,7 @@ const ImageGalleryBlock = (props) => {
         });
         setCategories(response.data);
       } catch (err) {
-        setError("Error fetching categories");
+        setError("Error fetching categories. Please try again later.");
       }
     };
     fetchCategories();
@@ -81,7 +77,7 @@ const ImageGalleryBlock = (props) => {
         });
         setImages(response.data);
       } catch (err) {
-        setError("Error fetching images");
+        setError("Error fetching images. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -93,67 +89,35 @@ const ImageGalleryBlock = (props) => {
   const blockProps = useBlockProps();
 
   // Calculate the image width dynamically based on the number of images per row
-  const calculateImageWidth = () => {
-    return `calc(${100 / imagesPerRow}% - 10px)`; // Adjust width per row
+  const calculateImageWidth = (isMobileView) => {
+    return `calc(${100 / (isMobileView ? imagesPerRowMobile : imagesPerRowDesktop)}% - 10px)`; // Adjust width per row based on view
   };
 
   // Handle resizing of cards based on window size
   const handleResize = () => {
-    const screenWidth = window.innerWidth;
-    if (screenWidth < 600) {
-      setAttributes({
-        cardSize: { width: "100%", height: `${imageHeight || 200}px` },
-        imagesPerRow: 1,
-      });
-    } else if (screenWidth < 900) {
-      setAttributes({
-        cardSize: { width: "auto", height: `${imageHeight || 250}px` },
-        imagesPerRow: 2,
-      });
-    } else {
-      setAttributes({
-        cardSize: { width: "auto", height: `${imageHeight || 300}px` },
-        imagesPerRow: 3,
-      });
+    if (isResponsive) {
+      const screenWidth = window.innerWidth;
+      // Apply mobile settings for smaller screens
+      if (screenWidth < 600) {
+        setAttributes({
+          imagesPerRowDesktop: imagesPerRowDesktop,  // Keep desktop setting as is
+          imagesPerRowMobile: imagesPerRowMobile, // Set mobile number of columns
+        });
+      }
     }
   };
 
-  // Reset card size to default values
-  const resetCardSize = () => {
-    setAttributes({
-      cardSize: { width: "auto", height: `${imageHeight || 200}px` },
-      imagesPerRow: 3,
-    });
-  };
+  useEffect(() => {
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isResponsive]);
 
-  // Toggle the auto-adjust feature for card size
-  const toggleAutoAdjustSize = () => {
-    setAttributes({ autoAdjustSize: !autoAdjustSize });
-  };
-
-  // Toggle border settings
-  const toggleBorderEnabled = () => {
-    setAttributes({ borderEnabled: !borderEnabled });
-  };
-
-  // Handle changes to image height via range slider
-  const handleHeightChange = (value) => {
-    setAttributes({
-      imageHeight: `${value}px`,
-      cardSize: {
-        ...cardSize,
-        height: `${value}px`,
-      },
-    });
-  };
-
-  // Set card height to auto to allow for dynamic adjustment
-  const setCardHeightToAuto = () => {
-    setAttributes({
-      imageHeight: "auto",
-      cardSize: { width: "auto", height: "auto" },
-    });
-  };
+  // Ensure cardSizeDesktop and cardSizeMobile are not undefined
+  const cardHeightDesktop = cardSizeDesktop?.height || '300px';
+  const cardHeightMobile = cardSizeMobile?.height || '200px';
 
   // Return the rendered component
   return (
@@ -172,45 +136,50 @@ const ImageGalleryBlock = (props) => {
             onChange={(newCategory) => setAttributes({ selectedCategory: newCategory })}
           />
 
-          {/* Images per row control */}
-          <SelectControl
-            label="Images Per Row"
-            value={imagesPerRow}
-            options={[
-              { label: "1 Image Per Row", value: 1 },
-              { label: "2 Images Per Row", value: 2 },
-              { label: "3 Images Per Row", value: 3 },
-              { label: "4 Images Per Row", value: 4 },
-            ]}
-            onChange={(newImagesPerRow) => setAttributes({ imagesPerRow: Number(newImagesPerRow) })}
+          {/* Images per row control for Desktop */}
+          <RangeControl
+            label="Images Per Row (Desktop)"
+            value={imagesPerRowDesktop}
+            onChange={(newImagesPerRowDesktop) => setAttributes({ imagesPerRowDesktop: Number(newImagesPerRowDesktop) })}
+            min={1}
+            max={12}
           />
 
-          {/* Toggle for auto-adjusting card size */}
-          <ToggleControl
-            label="Auto Adjust Card Size"
-            checked={autoAdjustSize}
-            onChange={toggleAutoAdjustSize}
+          {/* Images per row control for Mobile */}
+          <RangeControl
+            label="Images Per Row (Mobile)"
+            value={imagesPerRowMobile}
+            onChange={(newImagesPerRowMobile) => setAttributes({ imagesPerRowMobile: Number(newImagesPerRowMobile) })}
+            min={1}
+            max={12}
           />
 
-          {/* Fixed height range control */}
-          {!autoAdjustSize && (
-            <RangeControl
-              label="Card Height"
-              value={parseInt(validCardSize.height, 10)}
-              onChange={handleHeightChange}
-              min={100}
-              max={1500}
-            />
-          )}
+          {/* Card Height for Desktop */}
+          <RangeControl
+            label="Card Height (Desktop)"
+            value={parseInt(cardHeightDesktop, 10)}
+            onChange={(newHeight) => setAttributes({ cardSizeDesktop: { ...cardSizeDesktop, height: `${newHeight}px` } })}
+            min={100}
+            max={1500}
+          />
 
-          {/* Card background color palette */}
+          {/* Card Height for Mobile */}
+          <RangeControl
+            label="Card Height (Mobile)"
+            value={parseInt(cardHeightMobile, 10)}
+            onChange={(newHeight) => setAttributes({ cardSizeMobile: { ...cardSizeMobile, height: `${newHeight}px` } })}
+            min={100}
+            max={1500}
+          />
+
+          {/* Background color and border controls */}
           <ColorPalette
             label="Card Background Color"
             value={cardBgColor}
             onChange={(newColor) => setAttributes({ cardBgColor: newColor })}
           />
 
-          {/* Border width and radius controls */}
+          {/* Border Width and Radius */}
           <RangeControl
             label="Border Width"
             value={parseInt(borderWidth, 10)}
@@ -228,7 +197,7 @@ const ImageGalleryBlock = (props) => {
             disabled={!borderEnabled}
           />
 
-          {/* Card margin control */}
+          {/* Card Margin */}
           <RangeControl
             label="Card Margin"
             value={parseInt(cardMargin, 10)}
@@ -237,76 +206,81 @@ const ImageGalleryBlock = (props) => {
             max={50}
           />
 
-          {/* Border enabled toggle */}
+          {/* Toggle Border Enabled */}
           <ToggleControl
             label="Enable Border"
             checked={borderEnabled}
-            onChange={toggleBorderEnabled}
+            onChange={() => setAttributes({ borderEnabled: !borderEnabled })}
           />
 
-          {/* Buttons for adjusting card size */}
-          <Button isPrimary onClick={handleResize}>Set Suitable Card Size</Button>
-          <Button isSecondary onClick={resetCardSize}>Reset Card Size</Button>
-          <Button isSecondary onClick={setCardHeightToAuto}>Set Card Height to Auto</Button>
+          {/* Toggle Responsiveness */}
+          <ToggleControl
+            label="Enable Responsiveness"
+            checked={isResponsive}
+            onChange={() => setAttributes({ isResponsive: !isResponsive })}
+          />
         </PanelBody>
       </InspectorControls>
 
-      {/* Loading and error handling */}
+      {/* Loading, Error, and Image Display */}
       {loading ? (
         <div>
           <Skeleton height={20} width={200} style={{ marginBottom: "10px" }} />
           <div className="image-gallery" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             {[...Array(6)].map((_, index) => (
               <div key={index} className="image-item" style={{ width: "calc(33% - 10px)", boxSizing: "border-box" }}>
-                <Skeleton height={validCardSize.height} width="100%" />
+                <Skeleton height={cardHeightDesktop} width="100%" />
                 <Skeleton width={60} height={15} style={{ marginTop: "10px", marginLeft: "auto", marginRight: "auto" }} />
               </div>
             ))}
           </div>
         </div>
       ) : error ? (
-        <p>{error}</p>
+        <p style={{ color: "red" }}>{error}</p>
       ) : (
         <div>
           <p>{images.length > 0 ? `${images.length} images found` : "No images found"}</p>
           <div className="image-gallery" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             {images.length > 0 ? (
-              images.map((image, index) => (
-                <div
-                  key={index}
-                  className="image-item"
-                  style={{
-                    margin: cardMargin,
-                    padding: 0,
-                    width: calculateImageWidth(),
-                    boxSizing: "border-box",
-                    borderRadius: borderRadius,
-                    backgroundColor: cardBgColor,
-                    border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    alignItems: "stretch",
-                    height: validCardSize.height,
-                  }}
-                >
-                  <div className="image-container" style={{ width: "100%", height: "100%", position: "relative" }}>
-                    <img
-                      src={image.image_url}
-                      alt={`Image ${index + 1}`}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover", // Ensures image fills space without distortion
-                        borderRadius: borderRadius,
-                      }}
-                    />
+              images.map((image, index) => {
+                const isMobileView = window.innerWidth < 600; // Check if mobile view
+                return (
+                  <div
+                    key={index}
+                    className="image-item"
+                    style={{
+                      margin: cardMargin,
+                      padding: 0,
+                      width: calculateImageWidth(isMobileView),
+                      boxSizing: "border-box",
+                      borderRadius: borderRadius,
+                      backgroundColor: cardBgColor,
+                      border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      alignItems: "stretch",
+                      height: isMobileView ? cardHeightMobile : cardHeightDesktop,
+                    }}
+                  >
+                    <div className="image-container" style={{ width: "100%", height: "100%", position: "relative" }}>
+                      <img
+                        src={image.image_url}
+                        alt={`Image ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover", // Ensures image fills space without distortion
+                          borderRadius: borderRadius,
+                        }}
+                      />
+                    </div>
+                    <div className="image-title" style={{ marginTop: "10px", textAlign: "center" }}>
+                      <h3>{image.title}</h3>
+                    </div>
                   </div>
-                  <div className="image-title" style={{ marginTop: "10px", textAlign: "center" }}>
-                    <h3>{image.title}</h3>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p>No images found for this category.</p>
             )}
