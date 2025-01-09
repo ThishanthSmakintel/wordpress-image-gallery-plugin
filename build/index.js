@@ -20,9 +20,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
 /* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
-/* harmony import */ var react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! react-loading-skeleton */ "./node_modules/react-loading-skeleton/dist/index.js");
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
+/* harmony import */ var react_loading_skeleton__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! react-loading-skeleton */ "./node_modules/react-loading-skeleton/dist/index.js");
 /* harmony import */ var react_loading_skeleton_dist_skeleton_css__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! react-loading-skeleton/dist/skeleton.css */ "./node_modules/react-loading-skeleton/dist/skeleton.css");
+/* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @wordpress/data */ "@wordpress/data");
+/* harmony import */ var _wordpress_data__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_wordpress_data__WEBPACK_IMPORTED_MODULE_5__);
+
 
 
 
@@ -65,12 +68,22 @@ const ImageGalleryBlock = props => {
   const username = "thishanth";
   const password = "hht0768340599"; // Replace with actual password/token for production
   const authHeader = "Basic " + btoa(`${username}:${password}`);
+  const {
+    deviceType
+  } = (0,_wordpress_data__WEBPACK_IMPORTED_MODULE_5__.useSelect)(select => {
+    const {
+      __experimentalGetPreviewDeviceType
+    } = select("core/edit-post");
+    return {
+      deviceType: __experimentalGetPreviewDeviceType()
+    };
+  }, []);
 
   // Fetch categories when the component mounts
   (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios__WEBPACK_IMPORTED_MODULE_5__["default"].get(CATEGORY_API_URL, {
+        const response = await axios__WEBPACK_IMPORTED_MODULE_6__["default"].get(CATEGORY_API_URL, {
           headers: {
             Authorization: authHeader
           }
@@ -93,7 +106,7 @@ const ImageGalleryBlock = props => {
         if (selectedCategory && selectedCategory.length > 0) {
           url = `${IMAGE_GALLERY_API_URL}?category_slug=${selectedCategory}`;
         }
-        const response = await axios__WEBPACK_IMPORTED_MODULE_5__["default"].get(url, {
+        const response = await axios__WEBPACK_IMPORTED_MODULE_6__["default"].get(url, {
           headers: {
             Authorization: authHeader
           }
@@ -125,7 +138,7 @@ const ImageGalleryBlock = props => {
         setAttributes({
           imagesPerRowDesktop: imagesPerRowDesktop,
           // Keep desktop setting as is
-          imagesPerRowMobile: imagesPerRowMobile // Set mobile number of columns
+          imagesPerRowMobile: 1 // Set mobile number of columns to 1 (as per your requirement)
         });
       }
     }
@@ -139,8 +152,8 @@ const ImageGalleryBlock = props => {
   }, [isResponsive]);
 
   // Ensure cardSizeDesktop and cardSizeMobile are not undefined
-  const cardHeightDesktop = cardSizeDesktop?.height || '300px';
-  const cardHeightMobile = cardSizeMobile?.height || '200px';
+  const cardHeightDesktop = cardSizeDesktop?.height || "300px";
+  const cardHeightMobile = cardSizeMobile?.height || "200px";
 
   // Return the rendered component
   return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
@@ -148,7 +161,11 @@ const ImageGalleryBlock = props => {
   }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_2__.InspectorControls, null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.PanelBody, {
     title: "Gallery Settings",
     initialOpen: true
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.TextControl, {
+    label: "Current Device Type",
+    value: deviceType || "Loading...",
+    disabled: true
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.SelectControl, {
     label: "Select Category",
     value: selectedCategory,
     options: [{
@@ -161,15 +178,15 @@ const ImageGalleryBlock = props => {
     onChange: newCategory => setAttributes({
       selectedCategory: newCategory
     })
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
-    label: "Images Per Row (Desktop)",
+  }), (deviceType === "Desktop" || deviceType === "Tablet") && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+    label: "Images Per Row (Desktop/Tablet)",
     value: imagesPerRowDesktop,
     onChange: newImagesPerRowDesktop => setAttributes({
       imagesPerRowDesktop: Number(newImagesPerRowDesktop)
     }),
     min: 1,
     max: 12
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+  }), deviceType === "Mobile" && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Images Per Row (Mobile)",
     value: imagesPerRowMobile,
     onChange: newImagesPerRowMobile => setAttributes({
@@ -177,7 +194,7 @@ const ImageGalleryBlock = props => {
     }),
     min: 1,
     max: 12
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+  }), deviceType === "Desktop" && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Card Height (Desktop)",
     value: parseInt(cardHeightDesktop, 10),
     onChange: newHeight => setAttributes({
@@ -188,7 +205,7 @@ const ImageGalleryBlock = props => {
     }),
     min: 100,
     max: 1500
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
+  }), deviceType === "Mobile" && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__.RangeControl, {
     label: "Card Height (Mobile)",
     value: parseInt(cardHeightMobile, 10),
     onChange: newHeight => setAttributes({
@@ -243,13 +260,7 @@ const ImageGalleryBlock = props => {
     onChange: () => setAttributes({
       isResponsive: !isResponsive
     })
-  }))), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
-    height: 20,
-    width: 200,
-    style: {
-      marginBottom: "10px"
-    }
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }))), loading ? (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, deviceType === "Desktop" && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "image-gallery",
     style: {
       display: "flex",
@@ -260,13 +271,39 @@ const ImageGalleryBlock = props => {
     key: index,
     className: "image-item",
     style: {
-      width: "calc(33% - 10px)",
+      width: `calc(33% - 10px)`,
       boxSizing: "border-box"
     }
-  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_7__["default"], {
     height: cardHeightDesktop,
     width: "100%"
-  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_7__["default"], {
+    width: 60,
+    height: 15,
+    style: {
+      marginTop: "10px",
+      marginLeft: "auto",
+      marginRight: "auto"
+    }
+  })))), deviceType === "Mobile" && (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "image-gallery",
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "10px"
+    }
+  }, [...Array(1)].map((_, index // Only 1 skeleton item for mobile
+  ) => (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    key: index,
+    className: "image-item",
+    style: {
+      width: "calc(100% - 10px)",
+      boxSizing: "border-box"
+    }
+  }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_7__["default"], {
+    height: cardHeightMobile,
+    width: "100%"
+  }), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(react_loading_skeleton__WEBPACK_IMPORTED_MODULE_7__["default"], {
     width: 60,
     height: 15,
     style: {
@@ -285,15 +322,19 @@ const ImageGalleryBlock = props => {
       flexWrap: "wrap",
       gap: "10px"
     }
-  }, images.length > 0 ? images.map((image, index) => {
-    const isMobileView = window.innerWidth < 600; // Check if mobile view
+  }, deviceType === "Desktop" && (
+  // Desktop Layout - Render images based on imagesPerRowDesktop
+  images.length > 0 ? images.map((image, index) => {
+    const totalImagesInRow = imagesPerRowDesktop; // Number of images per row for Desktop
+    const imageWidth = `calc(${100 / totalImagesInRow}% - 10px)`; // Adjust image width per row
     return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
       key: index,
       className: "image-item",
       style: {
         margin: cardMargin,
         padding: 0,
-        width: calculateImageWidth(isMobileView),
+        width: imageWidth,
+        // Adjust width dynamically based on imagesPerRowDesktop
         boxSizing: "border-box",
         borderRadius: borderRadius,
         backgroundColor: cardBgColor,
@@ -302,7 +343,7 @@ const ImageGalleryBlock = props => {
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "stretch",
-        height: isMobileView ? cardHeightMobile : cardHeightDesktop
+        height: cardHeightDesktop
       }
     }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
       className: "image-container",
@@ -328,7 +369,54 @@ const ImageGalleryBlock = props => {
         textAlign: "center"
       }
     }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, image.title)));
-  }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category."))));
+  }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category.")), deviceType === "Mobile" && (
+  // Mobile Layout - Render images based on imagesPerRowMobile (1 image per row)
+  images.length > 0 ? images.map((image, index) => {
+    const totalImagesInRow = imagesPerRowMobile; // Number of images per row for Mobile (usually 1)
+    const imageWidth = `calc(${100 / totalImagesInRow}% - 10px)`; // Adjust image width for mobile (usually 100%)
+    return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+      key: index,
+      className: "image-item",
+      style: {
+        margin: cardMargin,
+        padding: 0,
+        width: imageWidth,
+        // Adjust width dynamically based on imagesPerRowMobile
+        boxSizing: "border-box",
+        borderRadius: borderRadius,
+        backgroundColor: cardBgColor,
+        border: borderEnabled ? `${borderWidth} solid #ccc` : "none",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "stretch",
+        height: cardHeightMobile
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+      className: "image-container",
+      style: {
+        width: "100%",
+        height: "100%",
+        position: "relative"
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("img", {
+      src: image.image_url,
+      alt: `Image ${index + 1}`,
+      style: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        // Ensures image fills space without distortion
+        borderRadius: borderRadius
+      }
+    })), (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+      className: "image-title",
+      style: {
+        marginTop: "10px",
+        textAlign: "center"
+      }
+    }, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("h3", null, image.title)));
+  }) : (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)("p", null, "No images found for this category.")))));
 };
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (ImageGalleryBlock);
 
@@ -443,6 +531,16 @@ module.exports = window["wp"]["blocks"];
 /***/ ((module) => {
 
 module.exports = window["wp"]["components"];
+
+/***/ }),
+
+/***/ "@wordpress/data":
+/*!******************************!*\
+  !*** external ["wp","data"] ***!
+  \******************************/
+/***/ ((module) => {
+
+module.exports = window["wp"]["data"];
 
 /***/ }),
 
